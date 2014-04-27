@@ -9,6 +9,7 @@ import Queue
 import types
 import platform
 import glob
+import signal
 
 import serial
 
@@ -24,46 +25,46 @@ CAP_SPI      = 0x8
 
 """ UPER1 board pinout """
 uper1_pinout = {
-1:  [CAP_GPIO,             [0], 	"PIO0_20"],
-2:  [CAP_GPIO,             [1], 	"PIO0_2"],
+1:  [CAP_GPIO,             [0],     "PIO0_20"],
+2:  [CAP_GPIO,             [1],     "PIO0_2"],
 3:  [CAP_GPIO | CAP_PWM,   [2,1,2], "PIO1_26"],
-4:  [CAP_GPIO,             [3], 	"PIO1_27"],
+4:  [CAP_GPIO,             [3],     "PIO1_27"],
 5:  [CAP_GPIO | CAP_SPI,   [4,1,2], "PIO1_20"],  #SPI1 SCK
-6:  [CAP_RESERVED,					"PIO0_4"],
-7:  [CAP_RESERVED,					"PIO0_5"],
-8:  [CAP_GPIO | CAP_SPI,   [5,1,1],	"PIO0_21"],  #SPI1 MOSI
-9:  [CAP_GPIO,             [6],	    "PIO1_23"],
+6:  [CAP_RESERVED,                  "PIO0_4"],
+7:  [CAP_RESERVED,                  "PIO0_5"],
+8:  [CAP_GPIO | CAP_SPI,   [5,1,1], "PIO0_21"],  #SPI1 MOSI
+9:  [CAP_GPIO,             [6],     "PIO1_23"],
 10: [CAP_GPIO | CAP_PWM,   [7,1,0], "PIO1_24"],
-11: [CAP_GPIO,             [8],	    "PIO0_7"],
-12: [CAP_GPIO,             [9],	    "PIO1_28"],
-13: [CAP_GPIO,             [10],	"PIO1_31"],
+11: [CAP_GPIO,             [8],     "PIO0_7"],
+12: [CAP_GPIO,             [9],     "PIO1_28"],
+13: [CAP_GPIO,             [10],    "PIO1_31"],
 14: [CAP_GPIO | CAP_SPI,   [11,1,0],"PIO1_21"],  #SPI1 MISO
-15: [CAP_GPIO,             [12],	"PIO0_8"],
-16: [CAP_GPIO,             [13],	"PIO0_9"],
-17: [CAP_GPIO,             [14],	"PIO0_10"],
-18: [CAP_GPIO,             [15],	"PIO1_29"],
+15: [CAP_GPIO,             [12],    "PIO0_8"],
+16: [CAP_GPIO,             [13],    "PIO0_9"],
+17: [CAP_GPIO,             [14],    "PIO0_10"],
+18: [CAP_GPIO,             [15],    "PIO1_29"],
 19: [CAP_RESERVED],
 20: [CAP_RESERVED],
 21: [CAP_RESERVED],
 22: [CAP_RESERVED],
-23: [CAP_GPIO | CAP_ADC,   [33,0],	"PIO1_19"],
-24: [CAP_GPIO | CAP_ADC,   [32,1],	"PIO1_25"],
-25: [CAP_GPIO | CAP_ADC,   [31,2],	"PIO1_16"],
-26: [CAP_GPIO | CAP_ADC,   [30,3],	"PIO0_19"],
-27: [CAP_GPIO | CAP_PWM,   [29,0,0],"PIO0_18"],
-28: [CAP_GPIO | CAP_PWM,   [28,0,1],"PIO0_17"],
-29: [CAP_GPIO,             [27],	"PIO1_15"],
-30: [CAP_GPIO | CAP_ADC,   [26,4],	"PIO0_23"],
-31: [CAP_GPIO | CAP_ADC,   [25,5],	"PIO0_22"],
-32: [CAP_GPIO | CAP_ADC,   [24,6],	"PIO0_16"],
-33: [CAP_GPIO | CAP_ADC,   [23,7],	"PIO0_15"],
-34: [CAP_GPIO | CAP_PWM,   [22,0,2],"PIO1_22"],
-35: [CAP_GPIO,             [21],	"PIO1_14"],
-36: [CAP_GPIO,             [20],	"PIO1_13"],
-37: [CAP_GPIO,             [19],	"PIO0_14"],
-38: [CAP_GPIO,             [18],	"PIO0_13"],
-39: [CAP_GPIO | CAP_PWM,   [17,1,1],"PIO0_12"],
-40: [CAP_GPIO,             [16],	"PIO0_11"]
+23: [CAP_GPIO | CAP_ADC,   [33,0],    "PIO1_19"],
+24: [CAP_GPIO | CAP_ADC,   [32,1],    "PIO1_25"],
+25: [CAP_GPIO | CAP_ADC,   [31,2],    "PIO1_16"],
+26: [CAP_GPIO | CAP_ADC,   [30,3],    "PIO0_19"],
+27: [CAP_GPIO | CAP_PWM,   [29,0,0],  "PIO0_18"],
+28: [CAP_GPIO | CAP_PWM,   [28,0,1],  "PIO0_17"],
+29: [CAP_GPIO,             [27],      "PIO1_15"],
+30: [CAP_GPIO | CAP_ADC,   [26,4],    "PIO0_23"],
+31: [CAP_GPIO | CAP_ADC,   [25,5],    "PIO0_22"],
+32: [CAP_GPIO | CAP_ADC,   [24,6],    "PIO0_16"],
+33: [CAP_GPIO | CAP_ADC,   [23,7],    "PIO0_15"],
+34: [CAP_GPIO | CAP_PWM,   [22,0,2],  "PIO1_22"],
+35: [CAP_GPIO,             [21],      "PIO1_14"],
+36: [CAP_GPIO,             [20],      "PIO1_13"],
+37: [CAP_GPIO,             [19],      "PIO0_14"],
+38: [CAP_GPIO,             [18],      "PIO0_13"],
+39: [CAP_GPIO | CAP_PWM,   [17,1,1],  "PIO0_12"],
+40: [CAP_GPIO,             [16],      "PIO0_11"]
 }
 
 """ WEIO board pinout """
@@ -109,7 +110,7 @@ class IoBoard:
     cap_adc = CAP_ADC
     cap_pwm = CAP_PWM
 
-    def __init__(self, pinout=uper1_pinout, serial_port=None):
+    def __init__(self, pinout=weio_pinout, serial_port=None):
         ser = None
         if serial_port is None:
             my_platform = platform.system()
@@ -161,6 +162,14 @@ class IoBoard:
         self.devicename = "uper"
         self.version = __version__
         self.pinout = pinout
+
+        signal.signal(signal.SIGTERM, self.sig_handler)
+        signal.signal(signal.SIGINT, self.sig_handler)
+
+    def sig_handler(self, sig, frame):
+        #print('Caught signal: %s', sig)
+        #print "Exiting IoTPy"
+        self.reset()
 
     def get_info(self):
         return self.devicename, self.version
@@ -287,6 +296,8 @@ class IoBoard:
         return port_class(self, port, pins)
 
     def reset(self):
+        self.reader.stop()
+        self.ser.flush()
         self.uper_io(0, self.encode_sfp(251, []))
 
     def __enter__(self):
